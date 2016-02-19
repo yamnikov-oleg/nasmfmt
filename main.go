@@ -40,9 +40,12 @@ var (
 var dataPseudos = compilePseudoes()
 
 func compilePseudoes() (ret []*regexp.Regexp) {
-	raw := []string{"db", "dw", "dd", "dq", "ddq", "do", "dt"}
+	var (
+		raw = []string{"db", "dw", "dd", "dq", "ddq", "do", "dt"}
+		re  = `(?:\s|^)%v(?:\s|")`
+	)
 	for _, p := range raw {
-		ret = append(ret, regexp.MustCompile(fmt.Sprintf(`(?:\s|^)%v(?:\s|")`, p)))
+		ret = append(ret, regexp.MustCompile(fmt.Sprintf(re, p)))
 	}
 	return
 }
@@ -50,8 +53,7 @@ func compilePseudoes() (ret []*regexp.Regexp) {
 func parseLabel(line string) (lbl string, rest string) {
 	ind := strings.Index(line, ":")
 	if ind >= 0 {
-		lbl = line[:ind]
-		lbl = strings.TrimSpace(lbl)
+		lbl = strings.TrimSpace(line[:ind])
 		rest = line[ind+1:]
 		return
 	}
@@ -59,9 +61,8 @@ func parseLabel(line string) (lbl string, rest string) {
 	for _, pseudo := range dataPseudos {
 		inds := pseudo.FindStringIndex(line)
 		if len(inds) > 0 {
-			ind = inds[0]
-			lbl = line[:ind]
-			lbl = strings.TrimSpace(lbl)
+			ind := inds[0]
+			lbl = strings.TrimSpace(line[:ind])
 			rest = line[ind:]
 			return
 		}
@@ -73,8 +74,7 @@ func parseLabel(line string) (lbl string, rest string) {
 func parseComment(line string) (cmt string, rest string) {
 	ind := strings.Index(line, ";")
 	if ind >= 0 {
-		cmt = line[ind+1:]
-		cmt = strings.TrimSpace(cmt)
+		cmt = strings.TrimSpace(line[ind+1:])
 		rest = line[:ind]
 		return
 	}
@@ -83,13 +83,11 @@ func parseComment(line string) (cmt string, rest string) {
 
 func parseLine(line string) *asmLine {
 	l := &asmLine{}
-	line = strings.TrimSpace(line)
 
 	l.label, line = parseLabel(line)
 	l.comment, line = parseComment(line)
 
-	l.text = line
-	l.text = strings.TrimSpace(l.text)
+	l.text = strings.TrimSpace(line)
 	l.text = mulSpaces.ReplaceAllString(l.text, " ")
 	l.text = commaSpaces.ReplaceAllString(l.text, ", ")
 
@@ -101,15 +99,18 @@ func (l *asmLine) empty() bool {
 }
 
 func (l *asmLine) print(w io.Writer) {
-	var space = []byte{' '}
+	var (
+		space  = []byte{' '}
+		newl   = []byte{'\n'}
+		column = 0
+	)
 
-	column := 0
 	if l.label != "" {
 		w.Write([]byte(l.label))
 		w.Write([]byte{':'})
 		column += utf8.RuneCountInString(l.label) + 1
 		if l.text != "" {
-			w.Write([]byte{'\n'})
+			w.Write(newl)
 			column = 0
 		}
 	}
@@ -122,8 +123,8 @@ func (l *asmLine) print(w io.Writer) {
 	}
 
 	if l.comment != "" {
-		if l.label != "" || l.text != "" {
-			if column < commentIndent {
+		if column != 0 {
+			if column < commentIndent-1 {
 				w.Write(bytes.Repeat(space, commentIndent-column-1))
 			} else {
 				w.Write(space)
@@ -133,7 +134,7 @@ func (l *asmLine) print(w io.Writer) {
 		w.Write([]byte(l.comment))
 	}
 
-	w.Write([]byte{'\n'})
+	w.Write(newl)
 }
 
 func formatto(filename, outname string) error {
@@ -155,7 +156,7 @@ func formatto(filename, outname string) error {
 		line := scanner.Text()
 		asmLine := parseLine(line)
 		if lastEmpty && asmLine.empty() {
-			continue
+			continue // Output no more than one empty line
 		}
 		asmLine.print(out)
 		lastEmpty = asmLine.empty()
@@ -165,16 +166,10 @@ func formatto(filename, outname string) error {
 
 func format(filename string) error {
 	outname := filename + "~"
-	err := formatto(filename, outname)
-	if err != nil {
+	if err := formatto(filename, outname); err != nil {
 		return err
 	}
-	err = os.Remove(filename)
-	if err != nil {
-		return err
-	}
-	err = os.Rename(outname, filename)
-	if err != nil {
+	if err := os.Rename(outname, filename); err != nil {
 		return err
 	}
 	return nil
