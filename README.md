@@ -1,6 +1,6 @@
 # nasmfmt
 
-Automatically format your nasm sources with a simple command.
+Automatically format your assembly sources with a simple command.
 
 Inspired by gofmt.
 
