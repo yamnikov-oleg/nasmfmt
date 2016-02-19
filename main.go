@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +11,20 @@ import (
 	"strings"
 	"unicode/utf8"
 )
+
+var (
+	insIndent     int
+	commentIndent int
+)
+
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [params] [file1 [file2 ...]]\nParameters:\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+	flag.IntVar(&insIndent, "ii", 8, "Indentation for instructions in spaces")
+	flag.IntVar(&commentIndent, "ci", 40, "Indentation for comments in spaces")
+}
 
 type asmLine struct {
 	label   string
@@ -20,11 +35,6 @@ type asmLine struct {
 var (
 	mulSpaces   = regexp.MustCompile(` +`)
 	commaSpaces = regexp.MustCompile(`, *`)
-)
-
-var (
-	insIndent     = 8
-	commentIndent = 40
 )
 
 var dataPseudos = compilePseudoes()
@@ -171,10 +181,8 @@ func format(filename string) error {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %v <files...>", os.Args[0])
-	}
-	files := os.Args[1:]
+	flag.Parse()
+	files := flag.Args()
 	for _, fn := range files {
 		err := format(fn)
 		if err != nil {
