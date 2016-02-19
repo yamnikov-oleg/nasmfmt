@@ -42,4 +42,29 @@ func TestParseLine(t *testing.T) {
 	assertParseLine(t, "lbl do data", asmLine{"lbl", "do data", ""})
 	assertParseLine(t, "lbl dt data", asmLine{"lbl", "dt data", ""})
 	assertParseLine(t, "add data", asmLine{"", "add data", ""})
+
+	assertParseLine(t, `db "not: a label"`, asmLine{"", `db "not: a label"`, ""})
+	assertParseLine(t, `db ";not a comment" ;real comment `, asmLine{"", `db ";not a comment"`, "real comment"})
+}
+
+func assertNoquotes(t *testing.T, in, rep, expect string) {
+	actual := noquotes(in, rep)
+	if actual != expect {
+		t.Errorf("noquotes(%q, %q): Expected %q, got %q", in, rep, expect, actual)
+	}
+}
+
+func TestNoquotes(t *testing.T) {
+	assertNoquotes(t, "", "x", "")
+	assertNoquotes(t, "normal string", "x", "normal string")
+	assertNoquotes(t, "something 'quoted'", "x", "something xxxxxxxx")
+	assertNoquotes(t, `something "quoted"`, "x", "something xxxxxxxx")
+	assertNoquotes(t, `something "quoted" and 'again'`, "x", "something xxxxxxxx and xxxxxxx")
+	assertNoquotes(t, `more "qu'ot" marks`, "x", "more xxxxxxx marks")
+	assertNoquotes(t, `more "qu'ot" 'ma"r"ks`, "x", "more xxxxxxx 'maxxxks")
+	assertNoquotes(t, `more "qu'ot" 'marks`, "x", "more xxxxxxx 'marks")
+	assertNoquotes(t, `more "qu'ot" 'marks`, " ", "more         'marks")
+	assertNoquotes(t, `more "qu'ot" 'marks`, "", "more  'marks")
+
+	assertNoquotes(t, "в кавычках 'юникод'", "x", "в кавычках xxxxxxxx")
 }
