@@ -33,6 +33,7 @@ func TestParseLine(t *testing.T) {
 	assertParseLine(t, "   mov   rax,   rbx    ", asmLine{"", "mov rax, rbx", ""})
 	assertParseLine(t, "   lbl  :mov   rax,   rbx    ", asmLine{"lbl", "mov rax, rbx", ""})
 	assertParseLine(t, "   lbl  :mov   rax,   rbx    \n  \n", asmLine{"lbl", "mov rax, rbx", ""})
+	assertParseLine(t, "mov eax, fs:[eax + 0x30]", asmLine{"", "mov eax, fs:[eax + 0x30]", ""})
 
 	assertParseLine(t, "lbl db data", asmLine{"lbl", "db data", ""})
 	assertParseLine(t, " dw   data", asmLine{"", "dw data", ""})

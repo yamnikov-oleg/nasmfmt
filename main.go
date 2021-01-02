@@ -123,6 +123,11 @@ func parseLabel(line string) (lbl string, rest string) {
 	if ind >= 0 {
 		lbl = strings.TrimSpace(line[:ind])
 		rest = line[ind+1:]
+
+		if strings.Index(rest, "[") >= 0 && strings.Index(rest, "]") >= 0 {
+			return "", line
+		}
+
 		return
 	}
 
