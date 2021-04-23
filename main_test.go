@@ -44,6 +44,10 @@ func TestParseLine(t *testing.T) {
 	assertParseLine(t, "lbl dt data", asmLine{"lbl", "dt data", ""})
 	assertParseLine(t, "add data", asmLine{"", "add data", ""})
 
+	assertParseLine(t, "lbl: ;:comment", asmLine{"lbl", "", ":comment"})
+	assertParseLine(t, "data ;:comment", asmLine{"", "data", ":comment"})
+	assertParseLine(t, ";fake_lbl:comment", asmLine{"", "", "fake_lbl:comment"})
+
 	assertParseLine(t, `db "not: a label"`, asmLine{"", `db "not: a label"`, ""})
 	assertParseLine(t, `db ";not a comment" ;real comment `, asmLine{"", `db ";not a comment"`, "real comment"})
 }

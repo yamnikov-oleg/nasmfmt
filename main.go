@@ -124,7 +124,7 @@ func parseLabel(line string) (lbl string, rest string) {
 		lbl = strings.TrimSpace(line[:ind])
 		rest = line[ind+1:]
 
-		if strings.Index(rest, "[") >= 0 && strings.Index(rest, "]") >= 0 {
+		if strings.Contains(rest, "[") && strings.Contains(rest, "]") {
 			return "", line
 		}
 
@@ -159,8 +159,8 @@ func parseComment(line string) (cmt string, rest string) {
 func parseLine(line string) *asmLine {
 	l := &asmLine{}
 
-	l.label, line = parseLabel(line)
 	l.comment, line = parseComment(line)
+	l.label, line = parseLabel(line)
 
 	l.text = strings.TrimSpace(line)
 	l.text = mulSpaces.ReplaceAllString(l.text, " ")
