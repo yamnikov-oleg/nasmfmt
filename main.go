@@ -213,17 +213,27 @@ func (l *asmLine) print(w io.Writer) {
 }
 
 func formatto(filename, outname string) error {
-	file, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	var file *os.File
+	var out *os.File
 
-	out, err := os.Create(outname)
-	if err != nil {
-		return err
+	if filename == "-" {
+		file = os.Stdin
+		out = os.Stdout
+	} else {
+		var err error
+
+		file, err = os.Open(filename)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		out, err = os.Create(outname)
+		if err != nil {
+			return err
+		}
+		defer out.Close()
 	}
-	defer out.Close()
 
 	scanner := bufio.NewScanner(file)
 	lastEmpty := false
@@ -244,8 +254,10 @@ func format(filename string) error {
 	if err := formatto(filename, outname); err != nil {
 		return err
 	}
-	if err := os.Rename(outname, filename); err != nil {
-		return err
+	if filename != "-" {
+		if err := os.Rename(outname, filename); err != nil {
+			return err
+		}
 	}
 	return nil
 }
