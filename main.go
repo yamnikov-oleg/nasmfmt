@@ -137,10 +137,7 @@ func parseLabel(line string) (lbl string, rest string) {
 	}
 
 	// Labels should not contain space
-	matched, err := regexp.MatchString(`\S*\s+\S*`, lbl)
-	if err != nil {
-		fmt.Println(err)
-	}
+	matched := regexp.MustCompile(`\S*\s+\S*`).MatchString(lbl)
 	if matched {
 		lbl, rest = "", line
 	}
