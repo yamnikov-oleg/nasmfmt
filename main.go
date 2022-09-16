@@ -33,8 +33,8 @@ type asmLine struct {
 }
 
 var (
-	mulSpaces   = regexp.MustCompile(` +`)
-	commaSpaces = regexp.MustCompile(`, *`)
+	mulSpaces   = regexp.MustCompile(`\s+`)
+	commaSpaces = regexp.MustCompile(`,\s*`)
 )
 
 func indexRune(s []rune, rn rune) int {
@@ -117,18 +117,14 @@ func compilePseudoes() (ret []*regexp.Regexp) {
 }
 
 func parseLabel(line string) (lbl string, rest string) {
+	lbl = ""
+	rest = line
 	noq := noquotes(line, "x")
 
 	ind := strings.Index(noq, ":")
 	if ind >= 0 {
 		lbl = strings.TrimSpace(line[:ind])
 		rest = line[ind+1:]
-
-		if strings.Contains(rest, "[") && strings.Contains(rest, "]") {
-			return "", line
-		}
-
-		return
 	}
 
 	for _, pseudo := range dataPseudos {
@@ -137,11 +133,16 @@ func parseLabel(line string) (lbl string, rest string) {
 			ind := inds[0]
 			lbl = strings.TrimSpace(line[:ind])
 			rest = line[ind:]
-			return
 		}
 	}
 
-	return "", line
+	// Labels should not contain space
+	matched := regexp.MustCompile(`\S*\s+\S*`).MatchString(lbl)
+	if matched {
+		lbl, rest = "", line
+	}
+
+	return
 }
 
 func parseComment(line string) (cmt string, rest string) {
